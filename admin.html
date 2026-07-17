@@ -57,7 +57,7 @@
 
         <div class="secao-backup">
             <h3>SISTEMA DE SAVE (BACKUP)</h3>
-            <p style="font-size: 13px; color: #aaa;">Como o Render desliga servidores inativos, clique abaixo para baixar seu "Save" antes de fazer atualizações grandes.</p>
+            <p style="font-size: 13px; color: #aaa;">Sempre baixe o seu save antes de atualizar o código para garantir que nada suma!</p>
             <button onclick="baixarBackup()" style="background: #00e5ff; margin-bottom: 15px;">📥 BAIXAR SAVE ATUAL (JSON)</button>
             
             <label>Restaurar um Save Antigo</label>
@@ -67,7 +67,17 @@
     </div>
 
     <script>
-        let senhaGlobal = '';
+        // Inicializa o banco de dados no LocalStorage caso não exista
+        if(!localStorage.getItem('bio_conteudos')) {
+            const padrao = [{
+                id: "1",
+                titulo: "Introdução à Citologia",
+                categoria: "citologia",
+                texto: "A citologia é o ramo da biologia que estuda as células, suas estruturas e funções. Todas as plantas e animais são formados por células básicas que mantêm a vida.",
+                imagem: ""
+            }];
+            localStorage.setItem('bio_conteudos', JSON.stringify(padrao));
+        }
 
         async function verificar() {
             const senhaDigitada = document.getElementById('pass').value;
@@ -79,7 +89,6 @@
             });
 
             if(res.ok) {
-                senhaGlobal = senhaDigitada;
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('conteudoAdmin').style.display = 'block';
                 atualizarLista();
@@ -88,66 +97,60 @@
             }
         }
 
-        document.getElementById('formConteudo').addEventListener('submit', async (e) => {
+        document.getElementById('formConteudo').addEventListener('submit', (e) => {
             e.preventDefault();
-            const dados = {
+            
+            const novo = {
+                id: Date.now().toString(),
                 titulo: document.getElementById('titulo').value,
                 categoria: document.getElementById('categoria').value,
                 imagem: document.getElementById('imagem').value,
                 texto: document.getElementById('texto').value
             };
 
-            const res = await fetch('/api/conteudos', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(dados)
-            });
+            let conteudos = JSON.parse(localStorage.getItem('bio_conteudos'));
+            conteudos.push(novo);
+            localStorage.setItem('bio_conteudos', JSON.stringify(conteudos));
 
-            if(res.ok) {
-                alert("Publicado com sucesso!");
-                document.getElementById('formConteudo').reset();
-                atualizarLista();
-            } else {
-                alert("Erro ao publicar conteúdo.");
-            }
+            alert("Publicado com sucesso no navegador!");
+            document.getElementById('formConteudo').reset();
+            atualizarLista();
         });
 
-        async function atualizarLista() {
-            const res = await fetch('/api/conteudos');
-            const json = await res.json();
+        function atualizarLista() {
+            const conteudos = JSON.parse(localStorage.getItem('bio_conteudos')) || [];
             const container = document.getElementById('listaMaterias');
             container.innerHTML = '';
             
-            if(json.dados.length === 0) {
+            if(conteudos.length === 0) {
                 container.innerHTML = '<p style="color: #666">Nenhuma matéria publicada.</p>';
                 return;
             }
 
-            json.dados.forEach(m => {
+            conteudos.forEach(m => {
                 container.innerHTML += `
                     <div class="item-lista">
                         <div>
                             <strong>${m.titulo}</strong> <br>
-                            <span style="color: #666; font-size: 12px;">ID: ${m.id} | Categoria: ${m.categoria}</span>
+                            <span style="color: #666; font-size: 12px;">Categoria: ${m.categoria}</span>
                         </div>
                         <button class="btn-del" onclick="deletarMateria('${m.id}')">Excluir</button>
                     </div>`;
             });
         }
 
-        async function deletarMateria(id) {
+        function deletarMateria(id) {
             if(!confirm("Tem certeza que deseja excluir esta matéria?")) return;
-            const res = await fetch(`/api/conteudos/${id}`, { method: 'DELETE' });
-            if(res.ok) {
-                alert("Matéria excluída!");
-                atualizarLista();
-            }
+            let conteudos = JSON.parse(localStorage.getItem('bio_conteudos'));
+            conteudos = conteudos.filter(c => c.id !== id);
+            localStorage.setItem('bio_conteudos', JSON.stringify(conteudos));
+            alert("Matéria excluída!");
+            atualizarLista();
         }
 
-        async function baixarBackup() {
-            const res = await fetch('/api/backup');
-            const dados = await res.json();
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dados, null, 2));
+        function baixarBackup() {
+            const dados = localStorage.getItem('bio_conteudos');
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(dados);
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
             downloadAnchor.setAttribute("download", "bioescola_save.json");
@@ -156,24 +159,20 @@
             downloadAnchor.remove();
         }
 
-        async function restaurarBackup() {
+        function restaurarBackup() {
             const textoJson = document.getElementById('campoRestaurar').value;
             try {
                 const dadosNovos = JSON.parse(textoJson);
-                const res = await fetch('/api/restaurar', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ dadosNovos, senha: senhaGlobal })
-                });
-                if(res.ok) {
-                    alert("Dados restaurados e salvos com sucesso!");
+                if(Array.isArray(dadosNovos)) {
+                    localStorage.setItem('bio_conteudos', JSON.stringify(dadosNovos));
+                    alert("Dados restaurados com sucesso!");
                     document.getElementById('campoRestaurar').value = '';
                     atualizarLista();
                 } else {
-                    alert("Erro na validação do servidor.");
+                    alert("Formato inválido.");
                 }
             } catch(e) {
-                alert("Texto JSON inválido! Abra o arquivo baixado, copie todo o texto e cole de novo.");
+                alert("Texto JSON inválido!");
             }
         }
     </script>

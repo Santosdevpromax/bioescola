@@ -16,7 +16,6 @@
             background: var(--bg); color: #fff; overflow-x: hidden;
         }
 
-        /* Fundo Animado */
         .bio-particles {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1; background: radial-gradient(circle at center, #0a1a12 0%, #050a08 100%);
@@ -61,7 +60,6 @@
         .card:hover { transform: translateY(-10px); border-color: var(--primary); box-shadow: 0 0 30px rgba(0,255,102,0.2); }
         .card h3 { color: var(--primary); margin-top: 0; font-size: 1.5em; }
         
-        /* BOTÃO ATUALIZADO: Fundo transparente, letras brancas e borda sutil */
         .btn-ler {
             background: transparent; border: 1px solid rgba(255, 255, 255, 0.3); padding: 12px; width: 100%;
             border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 15px;
@@ -72,7 +70,6 @@
             box-shadow: 0 0 15px var(--primary);
         }
 
-        /* TELA DE EXPANSÃO (Estilo idêntico ao segundo print) */
         #abaConteudo {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(5, 10, 8, 0.95); z-index: 100; display: none;
@@ -137,7 +134,7 @@
         <button class="btn-fechar" onclick="fecharAba()">✖ FECHAR ARQUIVO</button>
         
         <div class="caixa-leitura">
-            <h2 id="abaTitulo" style="font-size: 2.5em; color: var(--primary); margin-top: 0; border-bottom: 1px solid rgba(0,255,102,0.2); padding-bottom: 15px; text-shadow: 0 0 10px rgba(0,255,102,0.3);"></h2>
+            <h2 id="abaTitulo" style="font-size: 2.5em; color: var(--primary); margin-top: 0; border-bottom: 1px solid rgba(0,255,102,0.2); padding-bottom: 15px;"></h2>
             <img id="abaImagem" class="conteudo-img" src="" alt="Imagem Ilustrativa">
             <div class="conteudo-texto" id="abaTexto"></div>
         </div>
@@ -146,8 +143,18 @@
     <div class="btn-admin-flutuante" onclick="window.location.href='/admin'">⚙️</div>
 
     <script>
-        const API = '/api/conteudos';
         let todosConteudos = [];
+
+        if(!localStorage.getItem('bio_conteudos')) {
+            const padrao = [{
+                id: "1",
+                titulo: "Introdução à Citologia",
+                categoria: "citologia",
+                texto: "A citologia é o ramo da biologia que estuda as células, suas estruturas e funções. Todas as plantas e animais são formados por células básicas que mantêm a vida.",
+                imagem: ""
+            }];
+            localStorage.setItem('bio_conteudos', JSON.stringify(padrao));
+        }
 
         function criarParticulas() {
             const painel = document.getElementById('particles');
@@ -163,18 +170,15 @@
             }
         }
 
-        async function buscar() {
-            try {
-                const res = await fetch(API);
-                const json = await res.json();
-                todosConteudos = json.dados;
-                filtrar('todos');
-            } catch(e) { console.log("Erro ao carregar servidor"); }
+        function buscar() {
+            todosConteudos = JSON.parse(localStorage.getItem('bio_conteudos')) || [];
+            filtrar('todos');
         }
 
         function filtrar(cat) {
             const feed = document.getElementById('feed');
             feed.innerHTML = '';
+            
             const filtrados = cat === 'todos' ? todosConteudos : todosConteudos.filter(c => c.categoria === cat);
             
             if(filtrados.length === 0) {
@@ -189,14 +193,14 @@
                             <h3>${c.titulo}</h3>
                             <p style="opacity: 0.7; line-height: 1.5;">${c.texto.substring(0,100)}...</p>
                         </div>
-                        <button class="btn-ler" onclick="abrirMateriaPorIndex(${index})">VER CONTEÚDO COMPLETO</button>
+                        <button class="btn-ler" onclick="abrirMateriaPorIndex(${index}, '${cat}')">VER CONTEÚDO COMPLETO</button>
                     </div>`;
             });
         }
 
-        // Função corrigida por índice para evitar quebra de aspas no HTML
-        function abrirMateriaPorIndex(index) {
-            const c = todosConteudos[index];
+        function abrirMateriaPorIndex(index, cat) {
+            const filtrados = cat === 'todos' ? todosConteudos : todosConteudos.filter(c => c.categoria === cat);
+            const c = filtrados[index];
             if(!c) return;
 
             document.getElementById('abaTitulo').innerText = c.titulo;
@@ -206,3 +210,22 @@
             if(c.imagem && c.imagem.trim() !== "") {
                 imgElement.src = c.imagem;
                 imgElement.style.display = 'block';
+            } else {
+                imgElement.style.display = 'none';
+                imgElement.src = "";
+            }
+
+            document.getElementById('abaConteudo').style.display = 'flex';
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        function fecharAba() {
+            document.getElementById('abaConteudo').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        criarParticulas();
+        buscar();
+    </script>
+</body>
+</html>
