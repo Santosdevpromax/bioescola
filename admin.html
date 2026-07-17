@@ -2,109 +2,95 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Painel Admin - BioEscola</title>
+    <title>BioEscola - Painel Admin</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 30px; background: #e8f5e9; }
-        .painel { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px; }
-        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        .btn-post { background: #2e7d32; color: white; border: none; padding: 15px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; border-radius: 5px; }
-        .lista-itens { margin-top: 30px; }
-        .item { display: flex; justify-content: space-between; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; margin-bottom: 10px; align-items: center; border-radius: 5px; }
-        .btn-edit { background: #ffa000; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-right: 5px; font-weight: bold; }
-        .btn-del { background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f9f4; }
+        .form-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 600px; margin-bottom: 20px; }
+        input, select, textarea { width: 100%; padding: 8px; margin: 8px 0; box-sizing: border-box; }
+        button { background-color: #2e7d32; color: white; border: none; padding: 10px 15px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #1b5e20; }
+        .item-lista { background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .btn-excluir { background-color: #c62828; }
+        .btn-excluir:hover { background-color: #b71c1c; }
     </style>
 </head>
 <body>
-    <div class="painel">
-        <h2>Painel de Gestão de Conteúdo ⚙️</h2>
-        <input type="hidden" id="edit-id">
-        <input type="text" id="titulo" placeholder="Título do Conteúdo">
-        <select id="categoria">
-            <option value="citologia">Citologia</option>
-            <option value="zoologia">Zoologia</option>
-            <option value="botanica">Botânica</option>
-        </select>
-        <textarea id="texto" rows="5" placeholder="Escreva o texto completo do conteúdo aqui..."></textarea>
-        <button id="btn-acao" class="btn-post" onclick="postar()">Publicar Conteúdo</button>
-
-        <div class="lista-itens" id="lista"></div>
+    <h2>⚙️ Painel Administrativo - BioEscola</h2>
+    
+    <div class="form-box">
+        <h3>Criar Novo Conteúdo</h3>
+        <form id="formConteudo">
+            <label>Título:</label>
+            <input type="text" id="titulo" required>
+            
+            <label>Categoria:</label>
+            <select id="categoria">
+                <option value="citologia">Citologia</option>
+                <option value="zoologia">Zoologia</option>
+                <option value="botanica">Botânica</option>
+            </select>
+            
+            <label>Texto do Conteúdo:</label>
+            <textarea id="texto" rows="4" required></textarea>
+            
+            <button type="submit">Publicar no Site</button>
+        </form>
     </div>
 
-    <script>
-        const API = 'http://localhost:5000/api/conteudos';
-        let listaGlobal = [];
+    <h3>Gerenciar Conteúdos Existentes</h3>
+    <div id="listaAdmin">Carregando conteúdos do servidor...</div>
 
-        async function listar() {
+    <script>
+        // ATUALIZADO: Apontando para o seu Render oficial
+        const API = 'https://bioescola.onrender.com/api/conteudos';
+
+        async function carregarLista() {
             try {
                 const res = await fetch(API);
                 const json = await res.json();
-                listaGlobal = json.dados;
-                const container = document.getElementById('lista');
-                container.innerHTML = '<h4>Conteúdos Atuais no Site:</h4>';
-                listaGlobal.forEach(c => {
-                    container.innerHTML += `
-                    <div class="item">
-                        <span><strong>[${c.categoria.toUpperCase()}]</strong> ${c.titulo}</span>
-                        <div>
-                            <button class="btn-edit" onclick="prepararEdit(${c.id})">Editar</button>
-                            <button class="btn-del" onclick="excluir(${c.id})">Excluir</button>
+                const lista = document.getElementById('listaAdmin');
+                lista.innerHTML = '';
+
+                json.dados.forEach(c => {
+                    lista.innerHTML += `
+                        <div class="item-lista">
+                            <div>
+                                <strong>${c.titulo}</strong> [${c.categoria.toUpperCase()}]
+                            </div>
+                            <button class="btn-excluir" onclick="excluir('${c.id}')">Excluir</button>
                         </div>
-                    </div>`;
+                    `;
                 });
-            } catch(e) { alert("Erro ao carregar lista."); }
+            } catch(e) {
+                document.getElementById('listaAdmin').innerText = 'Erro ao carregar dados do Render.';
+            }
         }
 
-        async function postar() {
-            const id = document.getElementById('edit-id').value;
+        document.getElementById('formConteudo').addEventListener('submit', async (e) => {
+            e.preventDefault();
             const titulo = document.getElementById('titulo').value;
             const categoria = document.getElementById('categoria').value;
             const texto = document.getElementById('texto').value;
 
-            if(!titulo || !texto) return alert("Preencha todos os campos!");
-
-            const metodo = id ? 'PUT' : 'POST';
-            const url = id ? `${API}/${id}` : API;
-
-            await fetch(url, {
-                method: metodo,
-                headers: {'Content-Type': 'application/json'},
+            await fetch(API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ titulo, categoria, texto })
             });
-            limpar(); 
-            listar();
-        }
+
+            document.getElementById('formConteudo').reset();
+            carregarLista();
+            alert('Conteúdo criado com sucesso na nuvem!');
+        });
 
         async function excluir(id) {
-            if(confirm("Deseja mesmo excluir permanentemente este conteúdo?")) {
+            if(confirm('Tem certeza que deseja apagar?')) {
                 await fetch(`${API}/${id}`, { method: 'DELETE' });
-                listar();
+                carregarLista();
             }
         }
 
-        function ajustarEstiloBotao(texto, cor) {
-            const btn = document.getElementById('btn-acao');
-            btn.innerText = texto;
-            btn.style.background = cor;
-        }
-
-        function prepararEdit(id) {
-            const c = listaGlobal.find(item => item.id === id);
-            document.getElementById('edit-id').value = c.id;
-            document.getElementById('titulo').value = c.titulo;
-            document.getElementById('categoria').value = c.categoria;
-            document.getElementById('texto').value = c.texto;
-            ajustarEstiloBotao("Salvar Alterações", "#ffa000");
-        }
-
-        function limpar() {
-            document.getElementById('edit-id').value = '';
-            document.getElementById('titulo').value = '';
-            document.getElementById('texto').value = '';
-            ajustarEstiloBotao("Publicar Conteúdo", "#2e7d32");
-        }
-
-        listar();
+        carregarLista();
     </script>
 </body>
 </html>

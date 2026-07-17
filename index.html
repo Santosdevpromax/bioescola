@@ -32,8 +32,8 @@
     <button class="btn-admin" onclick="window.open('admin.html', '_blank')" title="Acessar Painel">⚙️</button>
 
     <script>
-        // ALTERADO: Agora aponta para a porta 5000 do novo servidor
-        const API = 'http://localhost:5000/api/conteudos';
+        // ATUALIZADO: Apontando para o seu Render oficial
+        const API = 'https://bioescola.onrender.com/api/conteudos';
         let todosConteudos = [];
 
         async function buscar() {
@@ -43,7 +43,7 @@
                 todosConteudos = json.dados;
                 filtrar('todos');
             } catch(e) { 
-                document.getElementById('feed').innerText = 'Erro ao conectar ao servidor backend na porta 5000.'; 
+                document.getElementById('feed').innerText = 'Erro ao conectar ao servidor do Render.'; 
             }
         }
 
