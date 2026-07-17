@@ -50,6 +50,9 @@
         nav button:hover { background: var(--primary); color: #000; box-shadow: 0 0 20px var(--primary); }
 
         /* Cores específicas das abas */
+        .btn-citologia { border-color: var(--citologia); } .btn-citologia:hover { background: var(--citologia); box-shadow: 0 0 20px var(--citologia); }
+        .btn-zoologia { border-color: var(--zoologia); } .btn-zoologia:hover { background: var(--zoologia); box-shadow: 0 0 20px var(--zoologia); }
+        .btn-botanica { border-color: var(--botanica); } .btn-botanica:hover { background: var(--botanica); box-shadow: 0 0 20px var(--botanica); }
         .btn-genetica { border-color: var(--genetica); } .btn-genetica:hover { background: var(--genetica); box-shadow: 0 0 20px var(--genetica); }
         .btn-evolucao { border-color: var(--evolucao); } .btn-evolucao:hover { background: var(--evolucao); box-shadow: 0 0 20px var(--evolucao); }
 
@@ -64,4 +67,128 @@
             transition: 0.4s; position: relative; overflow: hidden;
         }
         .card:hover { 
-            transform: translateY(-
+            transform: translateY(-10px); border-color: var(--primary);
+            box-shadow: 0 0 30px rgba(0,255,102,0.2);
+        }
+        .card h3 { color: var(--primary); margin-top: 0; font-size: 1.5em; }
+        
+        .btn-ler {
+            background: var(--primary); border: none; padding: 12px; width: 100%;
+            border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 15px;
+            color: #000; transition: 0.3s;
+        }
+        .btn-ler:hover { filter: brightness(1.2); transform: scale(1.02); }
+
+        /* TELA DE CONTEÚDO COMPLETO (OVERLAY) */
+        #abaConteudo {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 100; display: none;
+            flex-direction: column; align-items: center; padding: 50px;
+            overflow-y: auto;
+        }
+        .conteudo-texto { max-width: 800px; line-height: 1.8; font-size: 1.2em; color: #ccc; }
+        .btn-fechar {
+            background: #ff4444; color: white; border: none; padding: 15px 30px;
+            border-radius: 50px; cursor: pointer; font-weight: bold; margin-bottom: 30px;
+        }
+
+        .btn-admin-flutuante {
+            position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px;
+            background: #fff; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; cursor: pointer; font-size: 30px; z-index: 50;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bio-particles" id="particles"></div>
+
+    <header>
+        <h1>BIO//ESCOLA</h1>
+        <p style="color: var(--primary); letter-spacing: 2px;">SISTEMA BIOLÓGICO DE INFORMAÇÃO</p>
+    </header>
+
+    <nav>
+        <button onclick="filtrar('todos')">Todos</button>
+        <button class="btn-citologia" onclick="filtrar('citologia')">Citologia</button>
+        <button class="btn-zoologia" onclick="filtrar('zoologia')">Zoologia</button>
+        <button class="btn-botanica" onclick="filtrar('botanica')">Botânica</button>
+        <button class="btn-genetica" onclick="filtrar('genetica')">Genética</button>
+        <button class="btn-evolucao" onclick="filtrar('evolucao')">Evolução</button>
+    </nav>
+
+    <div class="container" id="feed"></div>
+
+    <div id="abaConteudo">
+        <button class="btn-fechar" onclick="fecharAba()">✖ FECHAR ARQUIVO</button>
+        <h2 id="abaTitulo" style="font-size: 2.5em; color: var(--primary);"></h2>
+        <div class="conteudo-texto" id="abaTexto"></div>
+    </div>
+
+    <div class="btn-admin-flutuante" onclick="window.location.href='/admin'">⚙️</div>
+
+    <script>
+        const API = '/api/conteudos';
+        let todosConteudos = [];
+
+        // Cria partículas de fundo
+        function criarParticulas() {
+            const painel = document.getElementById('particles');
+            for(let i=0; i<30; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.width = Math.random() * 8 + 'px';
+                p.style.height = p.style.width;
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.animationDuration = Math.random() * 10 + 10 + 's';
+                p.style.animationDelay = Math.random() * 10 + 's';
+                painel.appendChild(p);
+            }
+        }
+
+        async function buscar() {
+            try {
+                const res = await fetch(API);
+                const json = await res.json();
+                todosConteudos = json.dados;
+                filtrar('todos');
+            } catch(e) { console.log("Erro ao carregar servidor"); }
+        }
+
+        function filtrar(cat) {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = '';
+            const filtrados = cat === 'todos' ? todosConteudos : todosConteudos.filter(c => c.categoria === cat);
+            
+            if(filtrados.length === 0) {
+                feed.innerHTML = '<p style="text-align:center; grid-column: 1/-1; opacity:0.5;">Nenhum conteúdo cadastrado nesta categoria ainda.</p>';
+                return;
+            }
+
+            filtrados.forEach(c => {
+                feed.innerHTML += `
+                    <div class="card">
+                        <h3>${c.titulo}</h3>
+                        <p style="opacity: 0.7">${c.texto.substring(0,100)}...</p>
+                        <button class="btn-ler" onclick="abrirAba('${c.titulo}', '${c.texto.replace(/\n/g, '<br>')}')">VER CONTEÚDO COMPLETO</button>
+                    </div>`;
+            });
+        }
+
+        function abrirAba(titulo, texto) {
+            document.getElementById('abaTitulo').innerText = titulo;
+            document.getElementById('abaTexto').innerHTML = texto;
+            document.getElementById('abaConteudo').style.display = 'flex';
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        function fecharAba() {
+            document.getElementById('abaConteudo').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        criarParticulas();
+        buscar();
+    </script>
+</body>
+</html>
