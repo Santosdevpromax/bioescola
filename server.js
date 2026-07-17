@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const app = express();
 
 app.use(cors());
@@ -9,9 +10,10 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 const SENHA_CORRETA = 'admin123';
-const CAMINHO_ARQUIVO = path.join(__dirname, 'conteudos.json');
 
-// Função para carregar os conteúdos do arquivo JSON
+// Mudança crucial: Salvando na pasta /tmp do Linux do Render para evitar erros de permissão
+const CAMINHO_ARQUIVO = path.join(os.tmpdir(), 'bioescola_conteudos.json');
+
 function carregarConteudos() {
     try {
         if (fs.existsSync(CAMINHO_ARQUIVO)) {
@@ -21,7 +23,6 @@ function carregarConteudos() {
     } catch (error) {
         console.error("Erro ao ler o arquivo de dados:", error);
     }
-    // Retorna um padrão caso o arquivo não exista ou esteja corrompido
     return [
         {
             id: "1",
@@ -33,7 +34,6 @@ function carregarConteudos() {
     ];
 }
 
-// Função para salvar os conteúdos no arquivo JSON
 function salvarConteudos(dados) {
     try {
         fs.writeFileSync(CAMINHO_ARQUIVO, JSON.stringify(dados, null, 2), 'utf8');
@@ -42,20 +42,16 @@ function salvarConteudos(dados) {
     }
 }
 
-// Inicializa a lista de conteúdos carregando do arquivo
 let conteudos = carregarConteudos();
 
-// Rota principal - carrega o index.html
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Rota para a página de administração
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
-// Rota para verificar a senha digitada pelo usuário
 app.post('/api/login', (req, res) => {
     const { senha } = req.body;
     if (senha === SENHA_CORRETA) {
@@ -65,28 +61,28 @@ app.post('/api/login', (req, res) => {
     }
 });
 
-// Listar todos os conteúdos
 app.get('/api/conteudos', (req, res) => {
     res.json({ dados: conteudos });
 });
 
-// Criar um novo conteúdo (Com salvamento)
 app.post('/api/conteudos', (req, res) => {
-    const { titulo, categoria, texto, imagem } = req.body;
-    const novo = { id: Date.now().toString(), titulo, categoria, texto, imagem: imagem || "" };
-    
-    conteudos.push(novo);
-    salvarConteudos(conteudos); // Salva fisicamente no arquivo
-    
-    res.status(201).json({ mensagem: "Criado com sucesso!", dado: novo });
+    try {
+        const { titulo, categoria, texto, imagem } = req.body;
+        const novo = { id: Date.now().toString(), titulo, categoria, texto, imagem: imagem || "" };
+        
+        conteudos.push(novo);
+        salvarConteudos(conteudos); 
+        
+        res.status(201).json({ mensagem: "Criado com sucesso!", dado: novo });
+    } catch (err) {
+        res.status(500).json({ mensagem: "Erro interno ao salvar matéria." });
+    }
 });
 
-// Rota de Backup para baixar todos os posts salvos em caso de reinicialização do Render
 app.get('/api/backup', (req, res) => {
     res.json(conteudos);
 });
 
-// Rota para restaurar o backup enviado do painel admin
 app.post('/api/restaurar', (req, res) => {
     const { dadosNovos, senha } = req.body;
     if (senha === SENHA_CORRETA && Array.isArray(dadosNovos)) {
@@ -98,11 +94,10 @@ app.post('/api/restaurar', (req, res) => {
     }
 });
 
-// Deletar um conteúdo
 app.delete('/api/conteudos/:id', (req, res) => {
     const { id } = req.params;
     conteudos = conteudos.filter(c => c.id !== id);
-    salvarConteudos(conteudos); // Atualiza o arquivo físico
+    salvarConteudos(conteudos); 
     res.json({ mensagem: "Excluído com sucesso!" });
 });
 
