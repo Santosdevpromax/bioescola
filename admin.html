@@ -5,12 +5,15 @@
     <title>Painel Bio-Master</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; padding: 30px; }
-        .painel { max-width: 600px; margin: auto; background: #111; padding: 25px; border-radius: 10px; border: 1px solid #333; }
+        .painel { max-width: 600px; margin: auto; background: #111; padding: 25px; border-radius: 10px; border: 1px solid #333; margin-bottom: 20px; }
         input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; background: #1a1a1a; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; }
         button { width: 100%; padding: 15px; background: #00ff66; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; color: #000; font-size: 16px; }
         button:hover { filter: brightness(1.2); }
         #conteudoAdmin { display: none; }
         label { color: #00ff66; font-size: 14px; font-weight: bold; display: block; margin-top: 15px; }
+        .item-lista { background: #1a1a1a; padding: 15px; margin: 10px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #222; }
+        .btn-del { background: #ff4444; color: white; padding: 8px 15px; width: auto; font-size: 14px; }
+        .secao-backup { border-top: 1px dashed #333; margin-top: 30px; padding-top: 20px; }
     </style>
 </head>
 <body>
@@ -40,14 +43,32 @@
             <input type="url" id="imagem" placeholder="Cole o link da imagem aqui (https://...)">
 
             <label>Texto da Matéria Completa</label>
-            <textarea id="texto" rows="8" placeholder="Digite o conteúdo com início, meio e fim..." required></textarea>
+            <textarea id="texto" rows="8" placeholder="Digite o conteúdo aqui..." required></textarea>
             
             <button type="submit">PUBLICAR NO SISTEMA</button>
         </form>
-        <button onclick="window.location.href='/'" style="background: #333; color: #fff; margin-top: 10px;">VOLTAR AO SITE</button>
+        
+        <button onclick="window.location.href='/'" style="background: #333; color: #fff; margin-top: 15px;">VOLTAR AO SITE</button>
+
+        <hr style="border: 0; border-top: 1px solid #333; margin: 30px 0;">
+
+        <h2>MATÉRIAS ATIVAS NO SITE</h2>
+        <div id="listaMaterias">Carregando matérias...</div>
+
+        <div class="secao-backup">
+            <h3>SISTEMA DE SAVE (BACKUP)</h3>
+            <p style="font-size: 13px; color: #aaa;">Como o Render desliga servidores inativos, clique abaixo para baixar seu "Save" antes de fazer atualizações grandes.</p>
+            <button onclick="baixarBackup()" style="background: #00e5ff; margin-bottom: 15px;">📥 BAIXAR SAVE ATUAL (JSON)</button>
+            
+            <label>Restaurar um Save Antigo</label>
+            <textarea id="campoRestaurar" rows="3" placeholder="Cole aqui o texto do arquivo JSON baixado para restaurar tudo de uma vez..."></textarea>
+            <button onclick="restaurarBackup()" style="background: #ffaa00;">📤 RESTAURAR SAVE COPIADO</button>
+        </div>
     </div>
 
     <script>
+        let senhaGlobal = '';
+
         async function verificar() {
             const senhaDigitada = document.getElementById('pass').value;
 
@@ -58,8 +79,10 @@
             });
 
             if(res.ok) {
+                senhaGlobal = senhaDigitada;
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('conteudoAdmin').style.display = 'block';
+                atualizarLista();
             } else { 
                 alert("Senha Incorreta!"); 
             }
@@ -83,10 +106,76 @@
             if(res.ok) {
                 alert("Publicado com sucesso!");
                 document.getElementById('formConteudo').reset();
+                atualizarLista();
             } else {
                 alert("Erro ao publicar conteúdo.");
             }
         });
+
+        async function atualizarLista() {
+            const res = await fetch('/api/conteudos');
+            const json = await res.json();
+            const container = document.getElementById('listaMaterias');
+            container.innerHTML = '';
+            
+            if(json.dados.length === 0) {
+                container.innerHTML = '<p style="color: #666">Nenhuma matéria publicada.</p>';
+                return;
+            }
+
+            json.dados.forEach(m => {
+                container.innerHTML += `
+                    <div class="item-lista">
+                        <div>
+                            <strong>${m.titulo}</strong> <br>
+                            <span style="color: #666; font-size: 12px;">ID: ${m.id} | Categoria: ${m.categoria}</span>
+                        </div>
+                        <button class="btn-del" onclick="deletarMateria('${m.id}')">Excluir</button>
+                    </div>`;
+            });
+        }
+
+        async function deletarMateria(id) {
+            if(!confirm("Tem certeza que deseja excluir esta matéria?")) return;
+            const res = await fetch(`/api/conteudos/${id}`, { method: 'DELETE' });
+            if(res.ok) {
+                alert("Matéria excluída!");
+                atualizarLista();
+            }
+        }
+
+        async function baixarBackup() {
+            const res = await fetch('/api/backup');
+            const dados = await res.json();
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dados, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "bioescola_save.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        async function restaurarBackup() {
+            const textoJson = document.getElementById('campoRestaurar').value;
+            try {
+                const dadosNovos = JSON.parse(textoJson);
+                const res = await fetch('/api/restaurar', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ dadosNovos, senha: senhaGlobal })
+                });
+                if(res.ok) {
+                    alert("Dados restaurados e salvos com sucesso!");
+                    document.getElementById('campoRestaurar').value = '';
+                    atualizarLista();
+                } else {
+                    alert("Erro na validação do servidor.");
+                }
+            } catch(e) {
+                alert("Texto JSON inválido! Abra o arquivo baixado, copie todo o texto e cole de novo.");
+            }
+        }
     </script>
 </body>
 </html>
