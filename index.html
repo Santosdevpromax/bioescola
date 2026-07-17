@@ -56,48 +56,53 @@
             background: var(--glass); border: 1px solid rgba(255,255,255,0.1);
             padding: 25px; border-radius: 15px; backdrop-filter: blur(10px);
             transition: 0.4s; position: relative; overflow: hidden;
+            display: flex; flex-direction: column; justify-content: space-between;
         }
         .card:hover { transform: translateY(-10px); border-color: var(--primary); box-shadow: 0 0 30px rgba(0,255,102,0.2); }
         .card h3 { color: var(--primary); margin-top: 0; font-size: 1.5em; }
         
+        /* BOTÃO ATUALIZADO: Fundo transparente, letras brancas e borda sutil */
         .btn-ler {
-            background: var(--primary); border: none; padding: 12px; width: 100%;
+            background: transparent; border: 1px solid rgba(255, 255, 255, 0.3); padding: 12px; width: 100%;
             border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 15px;
-            color: #000; transition: 0.3s;
+            color: #fff; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;
         }
-        .btn-ler:hover { filter: brightness(1.2); transform: scale(1.02); }
+        .btn-ler:hover { 
+            background: var(--primary); color: #000; border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+        }
 
-        /* TELA DE CONTEÚDO CORRIGIDA (COM LIMITES E MARGENS) */
+        /* TELA DE EXPANSÃO (Estilo idêntico ao segundo print) */
         #abaConteudo {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(5, 10, 8, 0.95); z-index: 100; display: none;
             flex-direction: column; align-items: center; padding: 40px 20px;
-            overflow-y: auto; box-sizing: border-box; backdrop-filter: blur(10px);
+            overflow-y: auto; box-sizing: border-box; backdrop-filter: blur(15px);
         }
         
-        /* Caixa centralizadora do conteúdo */
         .caixa-leitura {
-            max-width: 800px; width: 100%; background: rgba(0, 0, 0, 0.8);
-            border: 1px solid var(--primary); border-radius: 16px;
-            padding: 40px; box-sizing: border-box; margin-bottom: 50px;
-            box-shadow: 0 0 40px rgba(0, 255, 102, 0.1);
+            max-width: 800px; width: 100%; background: rgba(0, 0, 0, 0.75);
+            border: 1px solid rgba(0, 255, 102, 0.4); border-radius: 16px;
+            padding: 40px; box-sizing: border-box; margin-top: 20px; margin-bottom: 50px;
+            box-shadow: 0 0 40px rgba(0, 255, 102, 0.15); backdrop-filter: blur(10px);
         }
 
         .conteudo-texto { 
-            line-height: 1.8; font-size: 1.2em; color: #e0e0e0; 
+            line-height: 1.9; font-size: 1.2em; color: #e0e0e0; 
             text-align: justify; word-wrap: break-word; 
         }
         
         .conteudo-img {
             max-width: 100%; max-height: 400px; margin: 25px auto; border-radius: 10px;
-            border: 2px solid var(--primary); box-shadow: 0 0 20px rgba(0, 255, 102, 0.3);
+            border: 1px solid var(--primary); box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
             display: none; object-fit: cover;
         }
 
         .btn-fechar {
-            background: #ff4444; color: white; border: none; padding: 15px 40px;
-            border-radius: 50px; cursor: pointer; font-weight: bold; margin-bottom: 20px;
-            box-shadow: 0 0 15px rgba(255, 68, 68, 0.4); transition: 0.3s;
+            background: #ff4444; color: white; border: none; padding: 12px 35px;
+            border-radius: 50px; cursor: pointer; font-weight: bold; margin-bottom: 10px;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.3); transition: 0.3s;
+            text-transform: uppercase; font-size: 14px;
         }
         .btn-fechar:hover { transform: scale(1.05); filter: brightness(1.2); }
 
@@ -132,7 +137,7 @@
         <button class="btn-fechar" onclick="fecharAba()">✖ FECHAR ARQUIVO</button>
         
         <div class="caixa-leitura">
-            <h2 id="abaTitulo" style="font-size: 2.5em; color: var(--primary); margin-top: 0; border-bottom: 1px solid rgba(0,255,102,0.3); padding-bottom: 15px;"></h2>
+            <h2 id="abaTitulo" style="font-size: 2.5em; color: var(--primary); margin-top: 0; border-bottom: 1px solid rgba(0,255,102,0.2); padding-bottom: 15px; text-shadow: 0 0 10px rgba(0,255,102,0.3);"></h2>
             <img id="abaImagem" class="conteudo-img" src="" alt="Imagem Ilustrativa">
             <div class="conteudo-texto" id="abaTexto"></div>
         </div>
@@ -177,43 +182,27 @@
                 return;
             }
 
-            filtrados.forEach(c => {
-                const txtPronto = c.texto.replace(/'/g, "\\'").replace(/\n/g, '<br>');
-                const imgPronta = c.imagem ? c.imagem.replace(/'/g, "\\'") : "";
-
+            filtrados.forEach((c, index) => {
                 feed.innerHTML += `
                     <div class="card">
-                        <h3>${c.titulo}</h3>
-                        <p style="opacity: 0.7">${c.texto.substring(0,100)}...</p>
-                        <button class="btn-ler" onclick="abrirAba('${c.titulo.replace(/'/g, "\\'")}', '${txtPronto}', '${imgPronta}')">VER CONTEÚDO COMPLETO</button>
+                        <div>
+                            <h3>${c.titulo}</h3>
+                            <p style="opacity: 0.7; line-height: 1.5;">${c.texto.substring(0,100)}...</p>
+                        </div>
+                        <button class="btn-ler" onclick="abrirMateriaPorIndex(${index})">VER CONTEÚDO COMPLETO</button>
                     </div>`;
             });
         }
 
-        function abrirAba(titulo, texto, urlImagem) {
-            document.getElementById('abaTitulo').innerText = titulo;
-            document.getElementById('abaTexto').innerHTML = texto;
+        // Função corrigida por índice para evitar quebra de aspas no HTML
+        function abrirMateriaPorIndex(index) {
+            const c = todosConteudos[index];
+            if(!c) return;
+
+            document.getElementById('abaTitulo').innerText = c.titulo;
+            document.getElementById('abaTexto').innerHTML = c.texto.replace(/\n/g, '<br>');
             
             const imgElement = document.getElementById('abaImagem');
-            if(urlImagem && urlImagem.trim() !== "") {
-                imgElement.src = urlImagem;
+            if(c.imagem && c.imagem.trim() !== "") {
+                imgElement.src = c.imagem;
                 imgElement.style.display = 'block';
-            } else {
-                imgElement.style.display = 'none';
-                imgElement.src = "";
-            }
-
-            document.getElementById('abaConteudo').style.display = 'flex';
-            document.body.style.overflow = 'hidden'; 
-        }
-
-        function fecharAba() {
-            document.getElementById('abaConteudo').style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-
-        criarParticulas();
-        buscar();
-    </script>
-</body>
-</html>
