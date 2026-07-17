@@ -15,7 +15,8 @@ let conteudos = [
         id: "1",
         titulo: "Introdução à Citologia",
         categoria: "citologia",
-        texto: "A citologia é o ramo da biologia que estuda as células, suas estruturas e funções. Todas as plantas e animais são formados por células básicas que mantêm a vida."
+        texto: "A citologia é o ramo da biologia que estuda as células, suas estruturas e funções. Todas as plantas e animais são formados por células básicas que mantêm a vida.",
+        imagem: "https://images.unsplash.com/photo-1576086213369-97a306d36557?w=500" // Exemplo de imagem padrão
     }
 ];
 
@@ -46,20 +47,5 @@ app.get('/api/conteudos', (req, res) => {
 
 // Criar um novo conteúdo
 app.post('/api/conteudos', (req, res) => {
-    const { titulo, categoria, texto } = req.body;
-    const novo = { id: Date.now().toString(), titulo, categoria, texto };
-    conteudos.push(novo);
-    res.status(201).json({ mensagem: "Criado com sucesso!", dado: novo });
-});
-
-// Deletar um conteúdo
-app.delete('/api/conteudos/:id', (req, res) => {
-    const { id } = req.params;
-    conteudos = conteudos.filter(c => c.id !== id);
-    res.json({ mensagem: "Excluído com sucesso!" });
-});
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Servidor rodando com sucesso na porta ${PORT}`);
-});
+    const { titulo, categoria, texto, imagem } = req.body;
+    const novo = { id: Date.now().toString(), titulo, categoria, texto, imagem: imagem || ""

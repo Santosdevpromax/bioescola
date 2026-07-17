@@ -16,7 +16,6 @@
             background: var(--bg); color: #fff; overflow-x: hidden;
         }
 
-        /* Fundo Animado de Partículas */
         .bio-particles {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1; background: radial-gradient(circle at center, #0a1a12 0%, #050a08 100%);
@@ -31,7 +30,6 @@
             100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
         }
 
-        /* Menu Futurista */
         header {
             padding: 30px; text-align: center; border-bottom: 1px solid rgba(0,255,102,0.2);
             backdrop-filter: blur(15px); background: rgba(0,0,0,0.5);
@@ -49,14 +47,12 @@
         }
         nav button:hover { background: var(--primary); color: #000; box-shadow: 0 0 20px var(--primary); }
 
-        /* Cores específicas das abas */
         .btn-citologia { border-color: var(--citologia); } .btn-citologia:hover { background: var(--citologia); box-shadow: 0 0 20px var(--citologia); }
         .btn-zoologia { border-color: var(--zoologia); } .btn-zoologia:hover { background: var(--zoologia); box-shadow: 0 0 20px var(--zoologia); }
         .btn-botanica { border-color: var(--botanica); } .btn-botanica:hover { background: var(--botanica); box-shadow: 0 0 20px var(--botanica); }
         .btn-genetica { border-color: var(--genetica); } .btn-genetica:hover { background: var(--genetica); box-shadow: 0 0 20px var(--genetica); }
         .btn-evolucao { border-color: var(--evolucao); } .btn-evolucao:hover { background: var(--evolucao); box-shadow: 0 0 20px var(--evolucao); }
 
-        /* Grid de Conteúdos */
         .container { 
             max-width: 1100px; margin: 40px auto; padding: 20px;
             display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px;
@@ -79,14 +75,22 @@
         }
         .btn-ler:hover { filter: brightness(1.2); transform: scale(1.02); }
 
-        /* TELA DE CONTEÚDO COMPLETO (OVERLAY) */
+        /* OVERLAY DE CONTEÚDO */
         #abaConteudo {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg); z-index: 100; display: none;
             flex-direction: column; align-items: center; padding: 50px;
-            overflow-y: auto;
+            overflow-y: auto; box-sizing: border-box;
         }
-        .conteudo-texto { max-width: 800px; line-height: 1.8; font-size: 1.2em; color: #ccc; }
+        .conteudo-texto { max-width: 800px; line-height: 1.8; font-size: 1.2em; color: #ccc; text-align: justify; }
+        
+        /* Estilo da imagem dentro da matéria expandida */
+        .conteudo-img {
+            max-width: 100%; max-height: 350px; margin: 20px 0; border-radius: 10px;
+            border: 2px solid var(--primary); box-shadow: 0 0 20px rgba(0, 255, 102, 0.3);
+            display: none; object-fit: cover;
+        }
+
         .btn-fechar {
             background: #ff4444; color: white; border: none; padding: 15px 30px;
             border-radius: 50px; cursor: pointer; font-weight: bold; margin-bottom: 30px;
@@ -121,7 +125,8 @@
 
     <div id="abaConteudo">
         <button class="btn-fechar" onclick="fecharAba()">✖ FECHAR ARQUIVO</button>
-        <h2 id="abaTitulo" style="font-size: 2.5em; color: var(--primary);"></h2>
+        <h2 id="abaTitulo" style="font-size: 2.5em; color: var(--primary); margin-bottom: 10px;"></h2>
+        <img id="abaImagem" class="conteudo-img" src="" alt="Imagem Ilustrativa">
         <div class="conteudo-texto" id="abaTexto"></div>
     </div>
 
@@ -131,7 +136,6 @@
         const API = '/api/conteudos';
         let todosConteudos = [];
 
-        // Cria partículas de fundo
         function criarParticulas() {
             const painel = document.getElementById('particles');
             for(let i=0; i<30; i++) {
@@ -166,18 +170,32 @@
             }
 
             filtrados.forEach(c => {
+                // Passa os dados estruturados para a função de abrir, escapando aspas simples de segurança
+                const txtPronto = c.texto.replace(/'/g, "\\'").replace(/\n/g, '<br>');
+                const imgPronta = c.imagem ? c.imagem.replace(/'/g, "\\'") : "";
+
                 feed.innerHTML += `
                     <div class="card">
                         <h3>${c.titulo}</h3>
                         <p style="opacity: 0.7">${c.texto.substring(0,100)}...</p>
-                        <button class="btn-ler" onclick="abrirAba('${c.titulo}', '${c.texto.replace(/\n/g, '<br>')}')">VER CONTEÚDO COMPLETO</button>
+                        <button class="btn-ler" onclick="abrirAba('${c.titulo.replace(/'/g, "\\'")}', '${txtPronto}', '${imgPronta}')">VER CONTEÚDO COMPLETO</button>
                     </div>`;
             });
         }
 
-        function abrirAba(titulo, texto) {
+        function abrirAba(titulo, texto, urlImagem) {
             document.getElementById('abaTitulo').innerText = titulo;
             document.getElementById('abaTexto').innerHTML = texto;
+            
+            const imgElement = document.getElementById('abaImagem');
+            if(urlImagem && urlImagem.trim() !== "") {
+                imgElement.src = urlImagem;
+                imgElement.style.display = 'block';
+            } else {
+                imgElement.style.display = 'none';
+                imgElement.src = "";
+            }
+
             document.getElementById('abaConteudo').style.display = 'flex';
             document.body.style.overflow = 'hidden'; 
         }
