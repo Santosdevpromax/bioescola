@@ -2,72 +2,66 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>BioEscola - Portal de Biologia</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioEscola v2.0 - Futurista</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f9f4; }
-        header { background-color: #2e7d32; color: white; padding: 30px; text-align: center; }
-        nav { background-color: #4caf50; display: flex; justify-content: center; padding: 10px; flex-wrap: wrap; }
-        nav button { background: none; border: none; color: white; font-weight: bold; margin: 5px 15px; cursor: pointer; font-size: 16px; }
-        .container { max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .conteudo-box { border-left: 4px solid #4caf50; padding: 15px; margin-bottom: 25px; background: #fafafa; }
-        .btn-ler { color: #2e7d32; font-weight: bold; cursor: pointer; background: none; border: none; font-size: 16px; padding: 0; }
-        .btn-admin { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; border: none; padding: 15px; border-radius: 50%; cursor: pointer; font-size: 20px; }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>🔬 BioEscola</h1>
-        <p>Conteúdos de Biologia para transformar o seu conhecimento.</p>
-    </header>
-    <nav>
-        <button onclick="filtrar('todos')">Todos</button>
-        <button onclick="filtrar('citologia')">Citologia</button>
-        <button onclick="filtrar('zoologia')">Zoologia</button>
-        <button onclick="filtrar('botanica')">Botânica</button>
-        <button onclick="filtrar('genetica')">Genética</button>
-        <button onclick="filtrar('evolucao')">Evolução</button>
-    </nav>
-    <div class="container">
-        <div id="feed">Carregando conteúdos...</div>
-    </div>
-    
-    <button class="btn-admin" onclick="window.location.href='admin.html'" title="Acessar Painel">⚙️</button>
-
-    <script>
-        const API = '/api/conteudos';
-        let todosConteudos = [];
-
-        async function buscar() {
-            try {
-                const res = await fetch(API);
-                const json = await res.json();
-                todosConteudos = json.dados;
-                filtrar('todos');
-            } catch(e) { 
-                document.getElementById('feed').innerText = 'Erro ao conectar ao servidor do Render.'; 
-            }
+        :root {
+            --primary: #00ff66; --citologia: #00ff66; --zoologia: #00f0ff;
+            --botanica: #a2ff00; --genetica: #bf00ff; --evolucao: #ff6600;
+            --bg: #050a08; --glass: rgba(255, 255, 255, 0.05);
         }
 
-        function filtrar(cat) {
-            const feed = document.getElementById('feed');
-            feed.innerHTML = '';
-            const filtrados = cat === 'todos' ? todosConteudos : todosConteudos.filter(c => c.categoria === cat);
-            
-            if(filtrados.length === 0) {
-                feed.innerHTML = '<p>Nenhum conteúdo nesta categoria.</p>';
-                return;
-            }
-
-            filtrados.forEach(c => {
-                feed.innerHTML += `
-                    <div class="conteudo-box">
-                        <h3>${c.titulo} <small style="color: #888; font-size: 12px;">(${c.categoria.toUpperCase()})</small></h3>
-                        <p>${c.texto.substring(0,120)}...</p>
-                        <button class="btn-ler" onclick="alert('${c.texto.replace(/'/g, "\\'")}')">Ler conteúdo completo...</button>
-                    </div>`;
-            });
+        body {
+            margin: 0; font-family: 'Segoe UI', sans-serif;
+            background: var(--bg); color: #fff; overflow-x: hidden;
         }
-        buscar();
-    </script>
-</body>
-</html>
+
+        /* Fundo Animado de Partículas */
+        .bio-particles {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; background: radial-gradient(circle at center, #0a1a12 0%, #050a08 100%);
+        }
+        .particle {
+            position: absolute; background: var(--primary); border-radius: 50%;
+            filter: blur(5px); opacity: 0.2; animation: float 20s infinite linear;
+        }
+        @keyframes float {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 0.3; }
+            100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+        }
+
+        /* Menu Futurista */
+        header {
+            padding: 30px; text-align: center; border-bottom: 1px solid rgba(0,255,102,0.2);
+            backdrop-filter: blur(15px); background: rgba(0,0,0,0.5);
+        }
+        h1 { margin: 0; font-size: 3em; letter-spacing: 5px; text-shadow: 0 0 15px var(--primary); }
+
+        nav {
+            display: flex; justify-content: center; flex-wrap: wrap; 
+            gap: 15px; padding: 20px; position: sticky; top: 0; z-index: 10;
+        }
+        nav button {
+            background: transparent; border: 1px solid var(--primary); color: #fff;
+            padding: 10px 20px; cursor: pointer; transition: 0.4s; border-radius: 5px;
+            font-weight: bold; text-transform: uppercase;
+        }
+        nav button:hover { background: var(--primary); color: #000; box-shadow: 0 0 20px var(--primary); }
+
+        /* Cores específicas das abas */
+        .btn-genetica { border-color: var(--genetica); } .btn-genetica:hover { background: var(--genetica); box-shadow: 0 0 20px var(--genetica); }
+        .btn-evolucao { border-color: var(--evolucao); } .btn-evolucao:hover { background: var(--evolucao); box-shadow: 0 0 20px var(--evolucao); }
+
+        /* Grid de Conteúdos */
+        .container { 
+            max-width: 1100px; margin: 40px auto; padding: 20px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px;
+        }
+        .card {
+            background: var(--glass); border: 1px solid rgba(255,255,255,0.1);
+            padding: 25px; border-radius: 15px; backdrop-filter: blur(10px);
+            transition: 0.4s; position: relative; overflow: hidden;
+        }
+        .card:hover { 
+            transform: translateY(-

@@ -2,116 +2,72 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>BioEscola - Painel Admin</title>
+    <title>Painel Bio-Master</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f9f4; }
-        .form-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 600px; margin-bottom: 20px; }
-        input, select, textarea { width: 100%; padding: 8px; margin: 8px 0; box-sizing: border-box; }
-        button { background-color: #2e7d32; color: white; border: none; padding: 10px 15px; cursor: pointer; font-weight: bold; }
-        button:hover { background-color: #1b5e20; }
-        .item-lista { background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #333; display: flex; justify-content: space-between; align-items: center; max-width: 600px; }
-        .btn-excluir { background-color: #c62828; }
-        #conteudoPainel { display: none; } /* Escondido por padrão */
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; padding: 30px; }
+        .painel { max-width: 600px; margin: auto; background: #111; padding: 25px; border-radius: 10px; border: 1px solid #333; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; background: #1a1a1a; border: 1px solid #444; color: #fff; border-radius: 5px; }
+        button { width: 100%; padding: 15px; background: #00ff66; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        #conteudoAdmin { display: none; }
     </style>
 </head>
 <body>
-    <div id="conteudoPainel">
-        <h2>⚙️ Painel Administrativo - BioEscola</h2>
-        <button onclick="window.location.href='index.html'" style="background-color: #555; margin-bottom: 20px;">⬅️ Voltar para o Site</button>
-        
-        <div class="form-box">
-            <h3>Criar Novo Conteúdo</h3>
-            <form id="formConteudo">
-                <label>Título:</label>
-                <input type="text" id="titulo" required>
-                
-                <label>Categoria:</label>
-                <select id="categoria">
-                    <option value="citologia">Citologia</option>
-                    <option value="zoologia">Zoologia</option>
-                    <option value="botanica">Botânica</option>
-                    <option value="genetica">Genética</option>
-                    <option value="evolucao">Evolução</option>
-                </select>
-                
-                <label>Texto do Conteúdo:</label>
-                <textarea id="texto" rows="4" required></textarea>
-                
-                <button type="submit">Publicar no Site</button>
-            </form>
-        </div>
 
-        <h3>Gerenciar Conteúdos Existentes</h3>
-        <div id="listaAdmin">Carregando conteúdos...</div>
+    <div id="loginSection" style="text-align: center; margin-top: 100px;">
+        <h2>Acesso ao Núcleo Central</h2>
+        <input type="password" id="pass" placeholder="Digite a senha bio-mestre">
+        <button onclick="verificar()">ACESSAR</button>
+    </div>
+
+    <div class="painel" id="conteudoAdmin">
+        <h2>GERENCIADOR DE DADOS</h2>
+        <form id="formConteudo">
+            <input type="text" id="titulo" placeholder="Título da Matéria" required>
+            <select id="categoria">
+                <option value="citologia">Citologia</option>
+                <option value="zoologia">Zoologia</option>
+                <option value="botanica">Botânica</option>
+                <option value="genetica">Genética</option>
+                <option value="evolucao">Evolução</option>
+            </select>
+            <textarea id="texto" rows="6" placeholder="Texto completo aqui..." required></textarea>
+            <button type="submit">PUBLICAR NO SISTEMA</button>
+        </form>
+        <button onclick="window.location.href='index.html'" style="background: #333; margin-top: 10px;">VOLTAR AO SITE</button>
     </div>
 
     <script>
-        const API = '/api/conteudos';
-
-        // Função de Proteção por Senha ao carregar a página
-        async function verificarAcesso() {
-            const senhaDigitada = prompt("Digite a senha de administrador para acessar o painel:");
-            
+        async function verificar() {
+            const senha = document.getElementById('pass').value;
             const res = await fetch('/api/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ senha: senhaDigitada })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ senha })
             });
 
-            if (res.ok) {
-                document.getElementById('conteudoPainel').style.display = 'block';
-                carregarLista();
-            } else {
-                alert("Senha incorreta! Acesso negado.");
-                window.location.href = 'index.html'; // Chuta a pessoa de volta para o site
-            }
-        }
-
-        async function carregarLista() {
-            try {
-                const res = await fetch(API);
-                const json = await res.json();
-                const lista = document.getElementById('listaAdmin');
-                lista.innerHTML = '';
-
-                json.dados.forEach(c => {
-                    lista.innerHTML += `
-                        <div class="item-lista">
-                            <div><strong>${c.titulo}</strong> [${c.categoria.toUpperCase()}]</div>
-                            <button class="btn-excluir" onclick="excluir('${c.id}')">Excluir</button>
-                        </div>`;
-                });
-            } catch(e) {
-                document.getElementById('listaAdmin').innerText = 'Erro ao carregar dados.';
-            }
+            if(res.ok) {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('conteudoAdmin').style.display = 'block';
+            } else { alert("Senha Incorreta!"); }
         }
 
         document.getElementById('formConteudo').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const titulo = document.getElementById('titulo').value;
-            const categoria = document.getElementById('categoria').value;
-            const texto = document.getElementById('texto').value;
+            const dados = {
+                titulo: document.getElementById('titulo').value,
+                categoria: document.getElementById('categoria').value,
+                texto: document.getElementById('texto').value
+            };
 
-            await fetch(API, {
+            await fetch('/api/conteudos', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ titulo, categoria, texto })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(dados)
             });
 
-            document.getElementById('formConteudo').reset();
-            carregarLista();
-            alert('Conteúdo criado com sucesso!');
+            alert("Publicado com sucesso!");
+            location.reload();
         });
-
-        async function excluir(id) {
-            if(confirm('Tem certeza que deseja apagar?')) {
-                await fetch(`${API}/${id}`, { method: 'DELETE' });
-                carregarLista();
-            }
-        }
-
-        // Executa a verificação assim que abre a página
-        verificarAcesso();
     </script>
 </body>
 </html>
