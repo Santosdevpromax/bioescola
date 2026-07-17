@@ -6,8 +6,8 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f9f4; }
         header { background-color: #2e7d32; color: white; padding: 30px; text-align: center; }
-        nav { background-color: #4caf50; display: flex; justify-content: center; padding: 10px; }
-        nav button { background: none; border: none; color: white; font-weight: bold; margin: 0 15px; cursor: pointer; font-size: 16px; }
+        nav { background-color: #4caf50; display: flex; justify-content: center; padding: 10px; flex-wrap: wrap; }
+        nav button { background: none; border: none; color: white; font-weight: bold; margin: 5px 15px; cursor: pointer; font-size: 16px; }
         .container { max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         .conteudo-box { border-left: 4px solid #4caf50; padding: 15px; margin-bottom: 25px; background: #fafafa; }
         .btn-ler { color: #2e7d32; font-weight: bold; cursor: pointer; background: none; border: none; font-size: 16px; padding: 0; }
@@ -24,16 +24,17 @@
         <button onclick="filtrar('citologia')">Citologia</button>
         <button onclick="filtrar('zoologia')">Zoologia</button>
         <button onclick="filtrar('botanica')">Botânica</button>
+        <button onclick="filtrar('genetica')">Genética</button>
+        <button onclick="filtrar('evolucao')">Evolução</button>
     </nav>
     <div class="container">
         <div id="feed">Carregando conteúdos...</div>
     </div>
     
-    <button class="btn-admin" onclick="window.open('admin.html', '_blank')" title="Acessar Painel">⚙️</button>
+    <button class="btn-admin" onclick="window.location.href='admin.html'" title="Acessar Painel">⚙️</button>
 
     <script>
-        // ATUALIZADO: Apontando para o seu Render oficial
-        const API = 'https://bioescola.onrender.com/api/conteudos';
+        const API = '/api/conteudos';
         let todosConteudos = [];
 
         async function buscar() {
@@ -60,7 +61,7 @@
             filtrados.forEach(c => {
                 feed.innerHTML += `
                     <div class="conteudo-box">
-                        <h3>${c.titulo}</h3>
+                        <h3>${c.titulo} <small style="color: #888; font-size: 12px;">(${c.categoria.toUpperCase()})</small></h3>
                         <p>${c.texto.substring(0,120)}...</p>
                         <button class="btn-ler" onclick="alert('${c.texto.replace(/'/g, "\\'")}')">Ler conteúdo completo...</button>
                     </div>`;

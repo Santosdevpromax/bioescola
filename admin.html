@@ -9,40 +9,63 @@
         input, select, textarea { width: 100%; padding: 8px; margin: 8px 0; box-sizing: border-box; }
         button { background-color: #2e7d32; color: white; border: none; padding: 10px 15px; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #1b5e20; }
-        .item-lista { background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .item-lista { background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #333; display: flex; justify-content: space-between; align-items: center; max-width: 600px; }
         .btn-excluir { background-color: #c62828; }
-        .btn-excluir:hover { background-color: #b71c1c; }
+        #conteudoPainel { display: none; } /* Escondido por padrão */
     </style>
 </head>
 <body>
-    <h2>⚙️ Painel Administrativo - BioEscola</h2>
-    
-    <div class="form-box">
-        <h3>Criar Novo Conteúdo</h3>
-        <form id="formConteudo">
-            <label>Título:</label>
-            <input type="text" id="titulo" required>
-            
-            <label>Categoria:</label>
-            <select id="categoria">
-                <option value="citologia">Citologia</option>
-                <option value="zoologia">Zoologia</option>
-                <option value="botanica">Botânica</option>
-            </select>
-            
-            <label>Texto do Conteúdo:</label>
-            <textarea id="texto" rows="4" required></textarea>
-            
-            <button type="submit">Publicar no Site</button>
-        </form>
+    <div id="conteudoPainel">
+        <h2>⚙️ Painel Administrativo - BioEscola</h2>
+        <button onclick="window.location.href='index.html'" style="background-color: #555; margin-bottom: 20px;">⬅️ Voltar para o Site</button>
+        
+        <div class="form-box">
+            <h3>Criar Novo Conteúdo</h3>
+            <form id="formConteudo">
+                <label>Título:</label>
+                <input type="text" id="titulo" required>
+                
+                <label>Categoria:</label>
+                <select id="categoria">
+                    <option value="citologia">Citologia</option>
+                    <option value="zoologia">Zoologia</option>
+                    <option value="botanica">Botânica</option>
+                    <option value="genetica">Genética</option>
+                    <option value="evolucao">Evolução</option>
+                </select>
+                
+                <label>Texto do Conteúdo:</label>
+                <textarea id="texto" rows="4" required></textarea>
+                
+                <button type="submit">Publicar no Site</button>
+            </form>
+        </div>
+
+        <h3>Gerenciar Conteúdos Existentes</h3>
+        <div id="listaAdmin">Carregando conteúdos...</div>
     </div>
 
-    <h3>Gerenciar Conteúdos Existentes</h3>
-    <div id="listaAdmin">Carregando conteúdos do servidor...</div>
-
     <script>
-        // ATUALIZADO: Apontando para o seu Render oficial
-        const API = 'https://bioescola.onrender.com/api/conteudos';
+        const API = '/api/conteudos';
+
+        // Função de Proteção por Senha ao carregar a página
+        async function verificarAcesso() {
+            const senhaDigitada = prompt("Digite a senha de administrador para acessar o painel:");
+            
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senha: senhaDigitada })
+            });
+
+            if (res.ok) {
+                document.getElementById('conteudoPainel').style.display = 'block';
+                carregarLista();
+            } else {
+                alert("Senha incorreta! Acesso negado.");
+                window.location.href = 'index.html'; // Chuta a pessoa de volta para o site
+            }
+        }
 
         async function carregarLista() {
             try {
@@ -54,15 +77,12 @@
                 json.dados.forEach(c => {
                     lista.innerHTML += `
                         <div class="item-lista">
-                            <div>
-                                <strong>${c.titulo}</strong> [${c.categoria.toUpperCase()}]
-                            </div>
+                            <div><strong>${c.titulo}</strong> [${c.categoria.toUpperCase()}]</div>
                             <button class="btn-excluir" onclick="excluir('${c.id}')">Excluir</button>
-                        </div>
-                    `;
+                        </div>`;
                 });
             } catch(e) {
-                document.getElementById('listaAdmin').innerText = 'Erro ao carregar dados do Render.';
+                document.getElementById('listaAdmin').innerText = 'Erro ao carregar dados.';
             }
         }
 
@@ -80,7 +100,7 @@
 
             document.getElementById('formConteudo').reset();
             carregarLista();
-            alert('Conteúdo criado com sucesso na nuvem!');
+            alert('Conteúdo criado com sucesso!');
         });
 
         async function excluir(id) {
@@ -90,7 +110,8 @@
             }
         }
 
-        carregarLista();
+        // Executa a verificação assim que abre a página
+        verificarAcesso();
     </script>
 </body>
 </html>
