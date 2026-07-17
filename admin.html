@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Admin - BioEscola</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 30px; background: #e8f5e9; }
+        .painel { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px; }
+        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .btn-post { background: #2e7d32; color: white; border: none; padding: 15px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; border-radius: 5px; }
+        .lista-itens { margin-top: 30px; }
+        .item { display: flex; justify-content: space-between; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; margin-bottom: 10px; align-items: center; border-radius: 5px; }
+        .btn-edit { background: #ffa000; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-right: 5px; font-weight: bold; }
+        .btn-del { background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="painel">
+        <h2>Painel de Gestão de Conteúdo ⚙️</h2>
+        <input type="hidden" id="edit-id">
+        <input type="text" id="titulo" placeholder="Título do Conteúdo">
+        <select id="categoria">
+            <option value="citologia">Citologia</option>
+            <option value="zoologia">Zoologia</option>
+            <option value="botanica">Botânica</option>
+        </select>
+        <textarea id="texto" rows="5" placeholder="Escreva o texto completo do conteúdo aqui..."></textarea>
+        <button id="btn-acao" class="btn-post" onclick="postar()">Publicar Conteúdo</button>
+
+        <div class="lista-itens" id="lista"></div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:5000/api/conteudos';
+        let listaGlobal = [];
+
+        async function listar() {
+            try {
+                const res = await fetch(API);
+                const json = await res.json();
+                listaGlobal = json.dados;
+                const container = document.getElementById('lista');
+                container.innerHTML = '<h4>Conteúdos Atuais no Site:</h4>';
+                listaGlobal.forEach(c => {
+                    container.innerHTML += `
+                    <div class="item">
+                        <span><strong>[${c.categoria.toUpperCase()}]</strong> ${c.titulo}</span>
+                        <div>
+                            <button class="btn-edit" onclick="prepararEdit(${c.id})">Editar</button>
+                            <button class="btn-del" onclick="excluir(${c.id})">Excluir</button>
+                        </div>
+                    </div>`;
+                });
+            } catch(e) { alert("Erro ao carregar lista."); }
+        }
+
+        async function postar() {
+            const id = document.getElementById('edit-id').value;
+            const titulo = document.getElementById('titulo').value;
+            const categoria = document.getElementById('categoria').value;
+            const texto = document.getElementById('texto').value;
+
+            if(!titulo || !texto) return alert("Preencha todos os campos!");
+
+            const metodo = id ? 'PUT' : 'POST';
+            const url = id ? `${API}/${id}` : API;
+
+            await fetch(url, {
+                method: metodo,
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ titulo, categoria, texto })
+            });
+            limpar(); 
+            listar();
+        }
+
+        async function excluir(id) {
+            if(confirm("Deseja mesmo excluir permanentemente este conteúdo?")) {
+                await fetch(`${API}/${id}`, { method: 'DELETE' });
+                listar();
+            }
+        }
+
+        function ajustarEstiloBotao(texto, cor) {
+            const btn = document.getElementById('btn-acao');
+            btn.innerText = texto;
+            btn.style.background = cor;
+        }
+
+        function prepararEdit(id) {
+            const c = listaGlobal.find(item => item.id === id);
+            document.getElementById('edit-id').value = c.id;
+            document.getElementById('titulo').value = c.titulo;
+            document.getElementById('categoria').value = c.categoria;
+            document.getElementById('texto').value = c.texto;
+            ajustarEstiloBotao("Salvar Alterações", "#ffa000");
+        }
+
+        function limpar() {
+            document.getElementById('edit-id').value = '';
+            document.getElementById('titulo').value = '';
+            document.getElementById('texto').value = '';
+            ajustarEstiloBotao("Publicar Conteúdo", "#2e7d32");
+        }
+
+        listar();
+    </script>
+</body>
+</html>
